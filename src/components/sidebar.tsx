@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { 
   Building2, 
@@ -14,12 +15,11 @@ import {
   Store
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { currentTenant } from '@/config/tenant' // Importando as configs do cliente
+import { currentTenant } from '@/config/tenant'
 
 export function Sidebar() {
   const pathname = usePathname()
 
-  // Montando os itens do menu baseados nas labels configuradas para o cliente atual
   const menuItems = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: currentTenant.labels.clientes, href: '/clientes', icon: Building2 },
@@ -33,18 +33,48 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 bg-slate-900 text-slate-100 flex flex-col h-screen border-r border-slate-800">
-      {/* Topo com o Logo ERF PDV */}
-      <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-        <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-          <div className="bg-indigo-600 text-white p-1.5 rounded-lg font-bold text-sm tracking-wider">
-            ERF
+      {/* Topo com o Símbolo Vermelho no lugar do bloco azul + ERF PDV */}
+      <div className="p-5 border-b border-slate-800 flex flex-col gap-3">
+        <div className="flex items-center gap-2.5">
+          {/* Símbolo Vermelho do Infinito / Logo Símbolo */}
+          <div className="relative h-8 w-8 bg-white rounded-md flex items-center justify-center p-1 overflow-hidden shrink-0 shadow-sm">
+            <Image 
+              src="/images/logo-simbolo.png" // Ajuste o nome do arquivo se necessário (ex: /logo-simbolo.jpg)
+              alt="Símbolo ERF" 
+              width={24} 
+              height={24} 
+              className="object-contain"
+            />
           </div>
-          <span>ERF <span className="text-indigo-400">PDV</span></span>
-        </h1>
+          <h1 className="text-xl font-bold tracking-tight text-white">
+            ERF <span className="text-indigo-400">PDV</span>
+          </h1>
+        </div>
+
+        {/* Assinatura da Empresa Desenvolvedora (Logotipo Completo) */}
+        <div className="flex items-center gap-2 pt-2 border-t border-slate-800/60">
+          <div className="relative h-7 w-7 bg-white rounded flex items-center justify-center p-0.5 overflow-hidden shrink-0">
+            <Image 
+              src="/images/logo.jpg" // O logotipo completo da RFH Tech IT
+              alt="RFH Tech IT" 
+              width={28} 
+              height={28} 
+              className="object-contain"
+            />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold leading-none">
+              Desenvolvido por
+            </span>
+            <span className="text-xs font-bold text-slate-200 tracking-wide mt-0.5">
+              RFH TECH IT
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Indicador do Cliente Atual (Ex: Raiz Latina / Loja de Roupas) */}
-      <div className="px-6 py-3 bg-slate-950/50 border-b border-slate-800/80 flex items-center gap-2 text-xs text-slate-400">
+      <div className="px-5 py-2.5 bg-slate-950/50 border-b border-slate-800/80 flex items-center gap-2 text-xs text-slate-400">
         <Store className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
         <span className="truncate font-medium text-slate-300" title={currentTenant.name}>
           {currentTenant.name}

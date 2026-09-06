@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { ShoppingBag, Users, Calendar, Store, ClipboardList } from "lucide-react";
 
@@ -41,8 +42,47 @@ export default function MobileLayout({
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 text-gray-900">
+      {/* Cabeçalho Fixo Superior Mobile - Padronizado ERF PDV */}
+      <header className="sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-2">
+          <div className="relative h-7 w-7 bg-white rounded-md flex items-center justify-center p-0.5 overflow-hidden shrink-0 border border-gray-100 shadow-xs">
+            <Image 
+              src="/images/logo-simbolo.png" 
+              alt="Símbolo ERF" 
+              width={22} 
+              height={22} 
+              className="object-contain"
+            />
+          </div>
+          <h1 className="text-base font-bold tracking-tight text-gray-900">
+            ERF <span className="text-indigo-600">PDV</span>
+          </h1>
+        </div>
+
+        {/* Marca d'água / Assinatura compacta superior ou indicador */}
+        <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
+          <Image 
+            src="/images/logo-simbolo.png" 
+            alt="RFH Tech IT" 
+            width={14} 
+            height={14} 
+            className="object-contain"
+          />
+          <span className="text-[9px] font-bold text-gray-600 tracking-wider">
+            RFH TECH IT
+          </span>
+        </div>
+      </header>
+
       {/* Conteúdo da Página Atual */}
-      <main className="flex-1 pb-20">{children}</main>
+      <main className="flex-1 pb-24">{children}</main>
+
+      {/* Rodapé sutil com a assinatura corporativa antes da barra de navegação */}
+      <footer className="fixed bottom-16 left-0 right-0 z-20 bg-gray-100/90 backdrop-blur-xs py-1 border-t border-gray-200 text-center">
+        <p className="text-[10px] text-gray-500 font-medium">
+          Desenvolvido por <span className="font-bold text-gray-700">RFH TECH IT</span>
+        </p>
+      </footer>
 
       {/* Barra de Navegação Inferior Fixa */}
       <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-lg">
@@ -57,11 +97,11 @@ export default function MobileLayout({
                 onClick={() => router.push(item.href)}
                 className={`flex flex-col items-center justify-center space-y-1 transition-colors ${
                   isActive
-                    ? "text-pink-600 font-semibold"
+                    ? "text-indigo-600 font-semibold"
                     : "text-gray-500 hover:text-gray-900 font-normal"
                 }`}
               >
-                <Icon className={`h-5 w-5 ${isActive ? "text-pink-600" : "text-gray-400"}`} />
+                <Icon className={`h-5 w-5 ${isActive ? "text-indigo-600" : "text-gray-400"}`} />
                 <span className="text-[10px] truncate px-0.5">{item.label}</span>
               </button>
             );
