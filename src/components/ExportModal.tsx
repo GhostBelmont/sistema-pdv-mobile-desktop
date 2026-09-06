@@ -135,7 +135,11 @@ export function ExportModal({
       },
       margin: { top: 35, bottom: 20, left: 14, right: 14 },
       didDrawPage: (data) => {
-        const totalPaginas = doc.internal.getNumberOfPages()
+        const docInstance = data.doc as any;
+        const totalPaginas = typeof docInstance.internal.getNumberOfPages === 'function' 
+          ? docInstance.internal.getNumberOfPages() 
+          : (docInstance.internal.pages.length - 1);
+
         doc.setFontSize(8)
         doc.setTextColor(150)
         doc.text(
@@ -157,7 +161,6 @@ export function ExportModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl border overflow-hidden flex flex-col">
-        {/* Topo do Modal */}
         <div className="p-5 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Download className="h-5 w-5 text-blue-400" />
@@ -174,14 +177,12 @@ export function ExportModal({
           </button>
         </div>
 
-        {/* Corpo: Filtros */}
         <div className="p-6 space-y-4 text-xs">
           <div className="flex items-center gap-2 font-bold text-slate-700 border-b pb-2">
             <Filter className="h-4 w-4 text-blue-600" /> Filtrar Dados para Exportação
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {/* Filtro Tipo de Pessoa */}
             {temFiltroTipoPessoa && (
               <div className="space-y-1">
                 <label className="font-semibold text-slate-600">Tipo de Pessoa:</label>
@@ -197,7 +198,6 @@ export function ExportModal({
               </div>
             )}
 
-            {/* Filtro Status */}
             <div className="space-y-1">
               <label className="font-semibold text-slate-600">Status:</label>
               <select
@@ -211,7 +211,6 @@ export function ExportModal({
               </select>
             </div>
 
-            {/* Filtro Cidade */}
             {cidadesDisponiveis.length > 0 && (
               <div className="space-y-1">
                 <label className="font-semibold text-slate-600">Cidade:</label>
@@ -230,7 +229,6 @@ export function ExportModal({
               </div>
             )}
 
-            {/* Filtro Estado / UF */}
             {estadosDisponiveis.length > 0 && (
               <div className="space-y-1">
                 <label className="font-semibold text-slate-600">Estado (UF):</label>
@@ -255,7 +253,6 @@ export function ExportModal({
           </div>
         </div>
 
-        {/* Rodapé: Botões de Ação */}
         <div className="p-4 bg-slate-50 border-t flex items-center justify-end gap-3">
           <Button variant="outline" size="sm" onClick={onClose}>
             Cancelar

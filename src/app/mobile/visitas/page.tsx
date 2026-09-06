@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Calendar as CalendarIcon, Clock, MapPin, ExternalLink, CheckCircle } from "lucide-react";
+import { Clock, MapPin, ExternalLink } from "lucide-react";
 
 interface Appointment {
   id: string;
@@ -49,7 +49,9 @@ export default function MobileVisitasPage() {
         .order("appointment_date", { ascending: true });
 
       if (error) throw error;
-      if (data) setAppointments(data as unknown as Appointment[]);
+      if (data) {
+        setAppointments(data as unknown as Appointment[]);
+      }
     } catch (error) {
       console.error("Erro ao buscar visitas:", error);
     } finally {
@@ -57,12 +59,10 @@ export default function MobileVisitasPage() {
     }
   }
 
-  // Gera link dinâmico para salvar no Google Agenda pessoal
   function getGoogleCalendarUrl(app: Appointment) {
     const title = encodeURIComponent(`Visita: ${app.title}`);
     const details = encodeURIComponent(app.notes || `Visita comercial agendada via App Capilar.`);
     
-    // Tratativa segura para extrair dados do cliente caso venha como array ou objeto
     const clientData = Array.isArray(app.clients) ? app.clients[0] : app.clients;
     const location = encodeURIComponent(clientData?.city || "Salão Parceiro");
     
@@ -76,7 +76,6 @@ export default function MobileVisitasPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 pb-24">
-      {/* Header Fixo */}
       <div className="sticky top-0 z-10 bg-white border-b px-4 py-3 shadow-sm">
         <h1 className="text-lg font-bold text-gray-800">Agenda de Visitas</h1>
         <p className="text-xs text-gray-500">Compromissos comerciais em salões parceiros</p>
@@ -143,7 +142,6 @@ export default function MobileVisitasPage() {
                     </p>
                   )}
 
-                  {/* Botão de integração com Google Agenda */}
                   <div className="pt-2 border-t border-gray-50 flex justify-end">
                     <a
                       href={getGoogleCalendarUrl(item)}
