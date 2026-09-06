@@ -183,10 +183,13 @@ export default function HistoricoVendasPage() {
     return bateBusca && bateData
   })
 
-  // Cálculos de Resumo dos Filtros (Ignora vendas canceladas)
+  // Cálculos de Resumo dos Filtros (Ignora vendas canceladas para o total faturado)
   const totalFiltrado = vendasFiltradas
     .filter((v) => v.payment_status !== 'cancelled')
     .reduce((acc, v) => acc + Number(v.total_amount), 0)
+
+  const qtdConcluidas = vendasFiltradas.filter((v) => v.payment_status !== 'cancelled').length
+  const qtdCanceladas = vendasFiltradas.filter((v) => v.payment_status === 'cancelled').length
 
   const formatarMetodoPagamento = (metodo: string) => {
     switch (metodo) {
@@ -244,7 +247,17 @@ export default function HistoricoVendasPage() {
         <div className="bg-white p-5 rounded-lg border shadow-sm flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-slate-500">Qtd. de Pedidos</p>
-            <p className="text-2xl font-bold text-slate-800">{vendasFiltradas.length} venda(s)</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xl font-bold text-slate-800">{vendasFiltradas.length} total</span>
+              <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">
+                {qtdConcluidas} concluídas
+              </span>
+              {qtdCanceladas > 0 && (
+                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">
+                  {qtdCanceladas} canceladas
+                </span>
+              )}
+            </div>
           </div>
           <div className="p-3 bg-slate-100 rounded-full text-slate-600">
             <Receipt className="h-6 w-6" />

@@ -64,6 +64,9 @@ export default function DashboardPage() {
   const [totalProdutosVendidos, setTotalProdutosVendidos] = useState(0)
   const [produtosBaixoEstoque, setProdutosBaixoEstoque] = useState(0)
   const [quantidadePedidos, setQuantidadePedidos] = useState(0)
+  const [vendasConcluidas, setVendasConcluidas] = useState(0)
+  const [vendasCanceladas, setVendasCanceladas] = useState(0)
+  
   const [totalEntrada, setTotalEntrada] = useState(0)
   const [totalSaida, setTotalSaida] = useState(0)
   const [totalFaturado, setTotalFaturado] = useState(0)
@@ -76,6 +79,7 @@ export default function DashboardPage() {
     setLoading(true)
     try {
       const hoje = new Date().toISOString().split('T')[0]
+      
       const { data: agendamentos } = await supabase
         .from('appointments')
         .select('*, clients(name), services(name)')
@@ -84,13 +88,13 @@ export default function DashboardPage() {
         .order('start_time', { ascending: true })
 
       if (agendamentos) {
-        setAgendamentosHoje(agendamentos)
+        const agendamentosFiltrados = agendamentos.filter(item => {
+          const titulo = String(item.title || item.services?.name || '').toLowerCase()
+          return !titulo.includes('entrega de pedido')
+        })
+        setAgendamentosHoje(agendamentosFiltrados)
       } else {
-        const { data: agendamentosSimples } = await supabase
-          .from('appointments')
-          .select('*')
-          .order('id', { ascending: false })
-        if (agendamentosSimples) setAgendamentosHoje(agendamentosSimples.slice(0, 5))
+        setAgendamentosHoje([])
       }
 
       const { data: produtos } = await supabase.from('products').select('*')
@@ -119,11 +123,6 @@ export default function DashboardPage() {
             somaSaidas += valor
           }
         })
-      } else {
-        const { data: vendas } = await supabase.from('sales').select('total_amount')
-        if (vendas) {
-          somaEntradas = vendas.reduce((acc, curr) => acc + (Number(curr.total_amount) || 0), 0)
-        }
       }
 
       setTotalEntrada(somaEntradas)
@@ -137,6 +136,10 @@ export default function DashboardPage() {
 
       if (vendas) {
         setQuantidadePedidos(vendas.length)
+        const concluidas = vendas.filter(v => v.payment_status !== 'cancelled').length
+        const canceladas = vendas.filter(v => v.payment_status === 'cancelled').length
+        setVendasConcluidas(concluidas)
+        setVendasCanceladas(canceladas)
         setUltimasVendas(vendas.slice(0, 5))
       }
 
@@ -215,7 +218,7 @@ export default function DashboardPage() {
         <MetricCard
           title="Qtd. Pedidos"
           value={String(quantidadePedidos)}
-          description="Vendas realizadas"
+          description={`${vendasConcluidas} concluídas | ${vendasCanceladas} canceladas`}
           icon={ShoppingBag}
           colorClass="bg-purple-50 text-purple-600"
         />
@@ -305,20 +308,33 @@ export default function DashboardPage() {
             <p className="text-center py-8 text-slate-400 text-xs">Nenhuma venda registrada.</p>
           ) : (
             <div className="divide-y divide-slate-100 max-h-[300px] overflow-y-auto">
-              {ultimasVendas.map((venda) => (
-                <div key={venda.id} className="py-2.5 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-slate-800">Pedido #{venda.id.slice(0, 6)}</p>
-                    <p className="text-[10px] text-slate-400">
-                      {new Date(venda.created_at).toLocaleDateString('pt-BR')} às{' '}
-                      {new Date(venda.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
+              {ultimasVendas.map((venda) => {
+                const isCancelada = venda.payment_status === 'cancelled'
+
+                return (
+                  <div key={venda.id} className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className={`text-xs font-bold ${isCancelada ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                          Pedido #{venda.id.slice(0, 8)}
+                        </p>
+                        {isCancelada && (
+                          <span className="text-[10px] font-semibold bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
+                            Cancelada
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-400">
+                        {new Date(venda.created_at).toLocaleDateString('pt-BR')} às{' '}
+                        {new Date(venda.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    <span className={`text-xs font-extrabold ${isCancelada ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                      R$ {Number(venda.total_amount).toFixed(2).replace('.', ',')}
+                    </span>
                   </div>
-                  <span className="text-xs font-extrabold text-slate-900">
-                    R$ {Number(venda.total_amount).toFixed(2).replace('.', ',')}
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

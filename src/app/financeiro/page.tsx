@@ -7,6 +7,9 @@ import {
   PlusCircle,
   ArrowUpCircle,
   ArrowDownCircle,
+  Pencil,
+  Trash2,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,7 +38,8 @@ export default function FinanceiroPage() {
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
 
-  // Formulário de Nova Transação Manual
+  // Estados do Formulário (Modo Criação ou Edição)
+  const [editandoId, setEditandoId] = useState<string | null>(null)
   const [type, setType] = useState<'entrada' | 'saida'>('saida')
   const [category, setCategory] = useState('Despesa Operacional')
   const [amount, setAmount] = useState<string>('')
@@ -68,7 +72,7 @@ export default function FinanceiroPage() {
     carregarFinanceiro()
   }, [])
 
-  async function handleNovaTransacao(e: React.FormEvent) {
+  async function handleSalvarTransacao(e: React.FormEvent) {
     e.preventDefault()
 
     const valorNumerico = parseFloat(amount)
@@ -80,26 +84,76 @@ export default function FinanceiroPage() {
     setSalvando(true)
 
     try {
-      const { error } = await supabase.from('cash_flow').insert([
-        {
-          type,
-          category,
-          amount: valorNumerico,
-          description: description || (type === 'entrada' ? 'Receita Manual' : 'Despesa Manual'),
-          date,
-        },
-      ])
+      const dadosPayload = {
+        type,
+        category,
+        amount: valorNumerico,
+        description: description || (type === 'entrada' ? 'Receita Manual' : 'Despesa Manual'),
+        date,
+      }
 
-      if (error) throw error
+      if (editandoId) {
+        // Atualizar registro existente
+        const { error } = await supabase
+          .from('cash_flow')
+          .update(dadosPayload)
+          .eq('id', editandoId)
 
-      alert('Movimentação cadastrada com sucesso!')
-      setAmount('')
-      setDescription('')
+        if (error) throw error
+        alert('Movimentação atualizada com sucesso!')
+      } else {
+        // Inserir novo registro
+        const { error } = await supabase
+          .from('cash_flow')
+          .insert([dadosPayload])
+
+        if (error) throw error
+        alert('Movimentação cadastrada com sucesso!')
+      }
+
+      limparFormulario()
       carregarFinanceiro()
     } catch (err: any) {
       alert('Erro ao salvar movimentação: ' + err.message)
     } finally {
       setSalvando(false)
+    }
+  }
+
+  function iniciarEdicao(t: CashFlowItem) {
+    setEditandoId(t.id)
+    setType(t.type)
+    setCategory(t.category)
+    setAmount(t.amount.toString())
+    setDescription(t.description || '')
+    setDate(t.date ? t.date.split('T')[0] : new Date().toISOString().split('T')[0])
+  }
+
+  function limparFormulario() {
+    setEditandoId(null)
+    setType('saida')
+    setCategory('Despesa Operacional')
+    setAmount('')
+    setDescription('')
+    setDate(new Date().toISOString().split('T')[0])
+  }
+
+  async function handleExcluir(id: string) {
+    if (!confirm('Deseja realmente excluir esta movimentação do fluxo de caixa?')) return
+
+    try {
+      const { error } = await supabase
+        .from('cash_flow')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      alert('Movimentação excluída com sucesso!')
+      if (editandoId === id) limparFormulario()
+      carregarFinanceiro()
+    } catch (err: any) {
+      alert('Erro ao excluir movimentação: ' + err.message)
     }
   }
 
@@ -169,11 +223,24 @@ export default function FinanceiroPage() {
       {/* Formulário + Tabela */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white p-5 rounded-lg border shadow-sm space-y-4 h-fit">
-          <h2 className="text-base font-semibold text-slate-800 flex items-center gap-2 border-b pb-3">
-            <PlusCircle className="h-5 w-5 text-indigo-600" /> Nova Movimentação
-          </h2>
+          <div className="flex items-center justify-between border-b pb-3">
+            <h2 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+              <PlusCircle className="h-5 w-5 text-indigo-600" />
+              {editandoId ? 'Editar Movimentação' : 'Nova Movimentação'}
+            </h2>
+            {editandoId && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={limparFormulario}
+                className="h-7 text-xs text-slate-500 gap-1"
+              >
+                <X className="h-3.5 w-3.5" /> Cancelar Edição
+              </Button>
+            )}
+          </div>
 
-          <form onSubmit={handleNovaTransacao} className="space-y-4">
+          <form onSubmit={handleSalvarTransacao} className="space-y-4">
             <div>
               <label className="text-xs font-medium text-slate-600 block mb-1">
                 Tipo de Transação
@@ -279,9 +346,9 @@ export default function FinanceiroPage() {
             <Button
               type="submit"
               disabled={salvando}
-              className="w-full bg-indigo-600 hover:bg-indigo-700"
+              className={`w-full ${editandoId ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
             >
-              {salvando ? 'Registrando...' : 'Salvar Movimentação'}
+              {salvando ? 'Salvando...' : editandoId ? 'Salvar Alterações' : 'Salvar Movimentação'}
             </Button>
           </form>
         </div>
@@ -300,26 +367,27 @@ export default function FinanceiroPage() {
                 <TableHead>Categoria</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
+                <TableHead className="text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-slate-400">
+                  <TableCell colSpan={6} className="text-center py-8 text-slate-400">
                     Carregando histórico financeiro...
                   </TableCell>
                 </TableRow>
               ) : transacoes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-slate-400">
+                  <TableCell colSpan={6} className="text-center py-8 text-slate-400">
                     Nenhuma movimentação registrada no fluxo de caixa.
                   </TableCell>
                 </TableRow>
               ) : (
                 transacoes.map((t) => (
-                  <TableRow key={t.id}>
+                  <TableRow key={t.id} className={editandoId === t.id ? 'bg-amber-50/50' : ''}>
                     <TableCell className="text-slate-600 text-xs font-medium whitespace-nowrap">
-                      {t.date ? new Date(t.date).toLocaleDateString('pt-BR') : '-'}
+                      {t.date ? new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}
                     </TableCell>
                     <TableCell>
                       {t.type === 'entrada' ? (
@@ -344,6 +412,28 @@ export default function FinanceiroPage() {
                       }`}
                     >
                       {t.type === 'entrada' ? '+ ' : '- '}R$ {t.amount.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => iniciarEdicao(t)}
+                          className="h-8 w-8 text-slate-500 hover:text-indigo-600 hover:bg-slate-100"
+                          title="Editar Lançamento"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleExcluir(t.id)}
+                          className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                          title="Excluir Lançamento"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
