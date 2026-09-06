@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { ShoppingBag, Users, Calendar, Store, ClipboardList } from "lucide-react";
+import { currentTenant } from "@/config/tenant"; // Importando as configs do cliente atual
 
 export default function MobileLayout({
   children,
@@ -59,7 +60,7 @@ export default function MobileLayout({
           </h1>
         </div>
 
-        {/* Marca d'água / Assinatura compacta superior ou indicador */}
+        {/* Assinatura compacta superior da desenvolvedora */}
         <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
           <Image 
             src="/images/logo-simbolo.png" 
@@ -73,6 +74,19 @@ export default function MobileLayout({
           </span>
         </div>
       </header>
+
+      {/* Faixa com o Nome do Cliente Atual (Customizável por Tenant) */}
+      <div className="bg-indigo-900 text-indigo-100 px-4 py-1.5 flex items-center justify-between text-xs shadow-inner">
+        <div className="flex items-center gap-1.5 truncate">
+          <Store className="h-3.5 w-3.5 text-indigo-300 shrink-0" />
+          <span className="font-medium truncate tracking-wide">
+            {currentTenant.name}
+          </span>
+        </div>
+        <span className="text-[10px] bg-indigo-800/80 text-indigo-200 px-1.5 py-0.5 rounded uppercase font-semibold tracking-wider shrink-0">
+          Ativo
+        </span>
+      </div>
 
       {/* Conteúdo da Página Atual */}
       <main className="flex-1 pb-24">{children}</main>
