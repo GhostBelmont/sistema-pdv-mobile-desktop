@@ -4,9 +4,9 @@ import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata: Metadata = {
-  title: 'Sistema Capilar',
-  description: 'Gestão para salões e clínicas capilares',
+export const metadata = {
+  title: 'ERF PDV - Sistema de Gestão e Vendas',
+  description: 'Sistema completo de PDV e Fluxo de Caixa para pequenos comércios.',
 }
 
 export default function RootLayout({
