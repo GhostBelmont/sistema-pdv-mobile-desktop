@@ -197,21 +197,21 @@ export default function CatalogoPage() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
             <Button
-              variant={visualizacao === 'grid' ? 'white' : 'ghost'}
+              variant={visualizacao === 'grid' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setVisualizacao('grid')}
               className={`h-8 px-3 ${
-                visualizacao === 'grid' ? 'shadow-sm font-semibold' : 'text-slate-500'
+                visualizacao === 'grid' ? 'shadow-sm font-semibold bg-white text-slate-900 hover:bg-white' : 'text-slate-500'
               }`}
             >
               <Grid className="h-4 w-4 mr-1.5" /> Cards
             </Button>
             <Button
-              variant={visualizacao === 'lista' ? 'white' : 'ghost'}
+              variant={visualizacao === 'lista' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setVisualizacao('lista')}
               className={`h-8 px-3 ${
-                visualizacao === 'lista' ? 'shadow-sm font-semibold' : 'text-slate-500'
+                visualizacao === 'lista' ? 'shadow-sm font-semibold bg-white text-slate-900 hover:bg-white' : 'text-slate-500'
               }`}
             >
               <ListIcon className="h-4 w-4 mr-1.5" /> Lista

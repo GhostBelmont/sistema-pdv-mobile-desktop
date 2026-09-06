@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, ChangeEvent } from 'react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
@@ -16,15 +16,14 @@ import { Button } from '@/components/ui/button'
 interface ExportModalProps {
   isOpen: boolean
   onClose: () => void
-  tituloRelatorio: string // ex: "Relatório de Clientes & Salões"
-  subtitulo?: string // ex: "Base de Clientes Cadastrados"
-  dadosOriginais: any[] // Lista completa de dados atuais
-  colunasPDF: { header: string; dataKey: string }[] // Ex: [{ header: 'Nome', dataKey: 'nome' }]
-  colunasExcel: { header: string; key: string }[] // Ex: [{ header: 'Telefone', key: 'telefone' }]
-  // Lista de cidades e estados disponíveis para popular os selects do filtro
+  tituloRelatorio: string
+  subtitulo?: string
+  dadosOriginais: Record<string, any>[]
+  colunasPDF: { header: string; dataKey: string }[]
+  colunasExcel: { header: string; key: string }[]
   cidadesDisponiveis?: string[]
   estadosDisponiveis?: string[]
-  temFiltroTipoPessoa?: boolean // Para exibir opção PF/PJ se aplicável
+  temFiltroTipoPessoa?: boolean
 }
 
 export function ExportModal({
@@ -39,7 +38,6 @@ export function ExportModal({
   estadosDisponiveis = [],
   temFiltroTipoPessoa = false,
 }: ExportModalProps) {
-  // Filtros internos do Modal
   const [cidadeSel, setCidadeSel] = useState('')
   const [estadoSel, setEstadoSel] = useState('')
   const [tipoPessoaSel, setTipoPessoaSel] = useState<'todos' | 'PF' | 'PJ'>('todos')
@@ -47,22 +45,18 @@ export function ExportModal({
 
   if (!isOpen) return null
 
-  // Aplica os filtros escolhidos no Modal sobre a lista
   const filtrarDados = () => {
     return dadosOriginais.filter((item) => {
-      // Cidade
       if (cidadeSel) {
         const itemCidade = (item.city || item.cidade || '').toLowerCase()
         if (itemCidade !== cidadeSel.toLowerCase()) return false
       }
 
-      // Estado
       if (estadoSel) {
         const itemUF = (item.state || item.uf || item.estado || '').toLowerCase()
         if (itemUF !== estadoSel.toLowerCase()) return false
       }
 
-      // Tipo de Pessoa (PF / PJ)
       if (temFiltroTipoPessoa && tipoPessoaSel !== 'todos') {
         const doc = (item.cpf_cnpj || item.document || item.cnpj || '').replace(/\D/g, '')
         const ehPJ = doc.length === 14 || Boolean(item.company_name || item.razao_social)
@@ -70,7 +64,6 @@ export function ExportModal({
         if (tipoPessoaSel === 'PF' && ehPJ) return false
       }
 
-      // Status
       if (statusSel !== 'todos') {
         const st = (item.status || '').toLowerCase()
         const isInativo = item.active === false || st.includes('inac') || st.includes('desat')
@@ -82,11 +75,9 @@ export function ExportModal({
     })
   }
 
-  // --- GERAR EXCEL (.XLSX) ---
   const exportarExcel = () => {
     const dadosFiltrados = filtrarDados()
 
-    // Formata o JSON para as chaves configuradas
     const dadosFormatados = dadosFiltrados.map((item) => {
       const linha: Record<string, any> = {}
       colunasExcel.forEach((col) => {
@@ -99,18 +90,15 @@ export function ExportModal({
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Relatorio')
 
-    // Nome do arquivo sanitizado
     const nomeArquivo = `${tituloRelatorio.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`
     XLSX.writeFile(workbook, nomeArquivo)
     onClose()
   }
 
-  // --- GERAR PDF LIMPO ---
   const exportarPDF = () => {
     const dadosFiltrados = filtrarDados()
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
-    // 1. Cabeçalho limpo do documento
     doc.setFontSize(18)
     doc.setFont('helvetica', 'bold')
     doc.text(tituloRelatorio, 14, 20)
@@ -123,19 +111,17 @@ export function ExportModal({
     doc.setDrawColor(220)
     doc.line(14, 31, 196, 31)
 
-    // 2. Prepara os dados da tabela
     const bodyTabela = dadosFiltrados.map((item) =>
       colunasPDF.map((col) => item[col.dataKey] ?? '-')
     )
 
-    // 3. Renderiza Tabela
     autoTable(doc, {
       startY: 35,
       head: [colunasPDF.map((col) => col.header)],
       body: bodyTabela,
       theme: 'striped',
       headStyles: {
-        fillColor: [15, 23, 42], // Slate 900
+        fillColor: [15, 23, 42],
         textColor: [255, 255, 255],
         fontStyle: 'bold',
         fontSize: 9,
@@ -149,7 +135,6 @@ export function ExportModal({
       },
       margin: { top: 35, bottom: 20, left: 14, right: 14 },
       didDrawPage: (data) => {
-        // Rodapé com paginação
         const totalPaginas = doc.internal.getNumberOfPages()
         doc.setFontSize(8)
         doc.setTextColor(150)
@@ -202,7 +187,7 @@ export function ExportModal({
                 <label className="font-semibold text-slate-600">Tipo de Pessoa:</label>
                 <select
                   value={tipoPessoaSel}
-                  onChange={(e: any) => setTipoPessoaSel(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setTipoPessoaSel(e.target.value as 'todos' | 'PF' | 'PJ')}
                   className="w-full p-2 bg-slate-50 border rounded-lg outline-none focus:border-blue-500 font-medium"
                 >
                   <option value="todos">Todos (PF e PJ)</option>
@@ -217,7 +202,7 @@ export function ExportModal({
               <label className="font-semibold text-slate-600">Status:</label>
               <select
                 value={statusSel}
-                onChange={(e: any) => setStatusSel(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => setStatusSel(e.target.value as 'todos' | 'ativo' | 'inativo')}
                 className="w-full p-2 bg-slate-50 border rounded-lg outline-none focus:border-blue-500 font-medium"
               >
                 <option value="todos">Todos os Status</option>
@@ -232,7 +217,7 @@ export function ExportModal({
                 <label className="font-semibold text-slate-600">Cidade:</label>
                 <select
                   value={cidadeSel}
-                  onChange={(e) => setCidadeSel(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setCidadeSel(e.target.value)}
                   className="w-full p-2 bg-slate-50 border rounded-lg outline-none focus:border-blue-500 font-medium"
                 >
                   <option value="">Todas as Cidades</option>
@@ -251,7 +236,7 @@ export function ExportModal({
                 <label className="font-semibold text-slate-600">Estado (UF):</label>
                 <select
                   value={estadoSel}
-                  onChange={(e) => setEstadoSel(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setEstadoSel(e.target.value)}
                   className="w-full p-2 bg-slate-50 border rounded-lg outline-none focus:border-blue-500 font-medium"
                 >
                   <option value="">Todos os Estados</option>

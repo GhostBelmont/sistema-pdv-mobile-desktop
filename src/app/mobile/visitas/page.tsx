@@ -14,7 +14,11 @@ interface Appointment {
     company_name?: string;
     name: string;
     city?: string;
-  };
+  } | {
+    company_name?: string;
+    name: string;
+    city?: string;
+  }[] | null;
 }
 
 export default function MobileVisitasPage() {
@@ -45,7 +49,7 @@ export default function MobileVisitasPage() {
         .order("appointment_date", { ascending: true });
 
       if (error) throw error;
-      if (data) setAppointments(data);
+      if (data) setAppointments(data as unknown as Appointment[]);
     } catch (error) {
       console.error("Erro ao buscar visitas:", error);
     } finally {
@@ -57,7 +61,10 @@ export default function MobileVisitasPage() {
   function getGoogleCalendarUrl(app: Appointment) {
     const title = encodeURIComponent(`Visita: ${app.title}`);
     const details = encodeURIComponent(app.notes || `Visita comercial agendada via App Capilar.`);
-    const location = encodeURIComponent(app.clients?.city || "Salão Parceiro");
+    
+    // Tratativa segura para extrair dados do cliente caso venha como array ou objeto
+    const clientData = Array.isArray(app.clients) ? app.clients[0] : app.clients;
+    const location = encodeURIComponent(clientData?.city || "Salão Parceiro");
     
     const dateObj = new Date(app.appointment_date);
     const startIso = dateObj.toISOString().replace(/-|:|\.\d\d\d/g, "");
@@ -88,6 +95,8 @@ export default function MobileVisitasPage() {
                 timeStyle: "short",
               });
 
+              const clientData = Array.isArray(item.clients) ? item.clients[0] : item.clients;
+
               return (
                 <div
                   key={item.id}
@@ -96,9 +105,9 @@ export default function MobileVisitasPage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <h2 className="text-sm font-bold text-gray-900">{item.title}</h2>
-                      {item.clients && (
+                      {clientData && (
                         <p className="text-xs text-pink-600 font-semibold mt-0.5">
-                          {item.clients.company_name || item.clients.name}
+                          {clientData.company_name || clientData.name}
                         </p>
                       )}
                     </div>
@@ -120,10 +129,10 @@ export default function MobileVisitasPage() {
                       <Clock className="h-3.5 w-3.5 text-gray-400" />
                       <span>{dateFormatted}</span>
                     </div>
-                    {item.clients?.city && (
+                    {clientData?.city && (
                       <div className="flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5 text-gray-400" />
-                        <span>{item.clients.city}</span>
+                        <span>{clientData.city}</span>
                       </div>
                     )}
                   </div>
