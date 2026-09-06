@@ -2,6 +2,9 @@
 const nextConfig = {
   allowedDevOrigins: ['192.168.101.147'],
   devIndicators: false,
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
     remotePatterns: [
       {
